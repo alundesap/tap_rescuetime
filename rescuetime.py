@@ -47,17 +47,17 @@ class Counter:
                             for key in flow.request.multipart_form:
                                 #ctx.log.info("key: %s" % key.decode("utf-8") + " = " + flow.request.multipart_form[key])
                                 dkey = key.decode("utf-8")
-                                if dkey != "file":
-                                    dval = flow.request.multipart_form[key].decode("utf-8")
-                                    ctx.log.info("key: %s" % dkey + " = " + dval)
-                                else:
+                                if dkey == "account_key":
+                                    acct = flow.request.multipart_form[key].decode("utf-8")
+                                    ctx.log.info("account: %s" % acct)
+                                elif dkey == "file":
                                     ctx.log.info("key: %s" % dkey)
                                     #gzdat = flow.request.multipart_form[key]   # Somehow strips out "0A"
                                     boundary = cont_type.split(";")[1].strip().replace("boundary=","")
                                     ctx.log.info("boundary: %s" % boundary)
-                                    f = open("boundary.bin", "wt")
-                                    f.write(boundary)
-                                    f.close()
+                                    #f = open("boundary.bin", "wt")
+                                    #f.write(boundary)
+                                    #f.close()
                                     content = flow.request.content
                                     parts = content.split(bytes(boundary,'utf-8'))
                                     last = parts[len(parts)-2]
@@ -65,11 +65,12 @@ class Counter:
                                     gzdat = last.split(bytes("\r\n",'utf-8'))[4]
 
                                     ctx.log.info("data: %s" % "rt.gz")
-                                    f = open("rt.gz", "wb")
-                                    f.write(gzdat)
-                                    f.close()
+                                    #f = open("rt.gz", "wb")
+                                    #f.write(gzdat)
+                                    #f.close()
 
                                     #undat = gzip.decompress(gzdat)
+
                                     #undat = zlib.decompress(gzdat)
                                     #undat = zlib.decompress(gzdat, 16+zlib.MAX_WBITS)
                                     #Decompress = zlib.decompressobj(0)
@@ -77,9 +78,9 @@ class Counter:
                                     #while not Decompress.eof:
                                     #    undat += Decompress.decompress(gzdat,0)
                                     undat = gzip.GzipFile(fileobj=io.BytesIO(gzdat), mode='rb').read()
-                                    f = open("rt.csv", "wb")
-                                    f.write(undat)
-                                    f.close()
+                                    #f = open("rt.csv", "wb")
+                                    #f.write(undat)
+                                    #f.close()
                                     undat8 = undat.decode("utf-8")
                                     lines = undat8.splitlines()
                                     for bcline in lines:
@@ -89,10 +90,28 @@ class Counter:
                                         ctx.log.info("line: %s" % line)
                                         cols = line.split(',')
                                         numcols = len(cols)
-                                        ctx.log.info("numcols: %d" % numcols)
+                                        #ctx.log.info("numcols: %d" % numcols)
                                         #for col in cols:
                                         #    ctx.log.info("app: %s" % cols[0])
-
+                                        app  = cols[0]
+                                        uk01 = cols[1]
+                                        uk02 = cols[2]
+                                        doc  = cols[3]
+                                        uk04 = cols[4]
+                                        stime = cols[5]
+                                        etime = cols[6]
+                                        uk07 = cols[7]
+                                        uk08 = cols[8]
+                                        uk09 = cols[9]
+                                        uk10 = cols[10]
+                                        uk11 = cols[11]
+                                        ctx.log.info("acct: %s" % acct)
+                                        ctx.log.info("app: %s" % app)
+                                        ctx.log.info("doc: %s" % doc)
+                                        ctx.log.info("time: %s" % stime + " to " + etime)
+                                else:
+                                    dval = flow.request.multipart_form[key].decode("utf-8")
+                                    ctx.log.info("key: %s" % dkey + " = " + dval)
                         else:
                             ctx.log.info("expected content type of multipart/form-data.")
                     else: 
