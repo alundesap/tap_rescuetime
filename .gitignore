@@ -45,3 +45,5 @@ rt.meta
 rt.out
 rtbad.gz
 rtgood.gz
+.config
+mitmproxy.tar

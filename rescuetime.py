@@ -37,7 +37,8 @@ class Counter:
                         ctx.log.info("rt_post_type: %s" % "messages")
                     elif flow.request.url == "https://api.rescuetime.com/collect":
                         ctx.log.info("rt_post_type: %s" % "collect")
-
+# https://mitmproxy.readthedocs.io/en/v2.0.2/scripting/api.html#mitmproxy.http.HTTPRequest
+# https://mitmproxy.readthedocs.io/en/v2.0.2/
                         if mp_type == "multipart/form-data":
                             #mpfd.body = flow.request.content
                             #mpfd.type = mp_type
