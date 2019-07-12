@@ -5,6 +5,9 @@ import zlib
 import re
 import io
 import base64
+from hdbcli import dbapi
+import csv
+import os
 
 
 def dump(obj):
@@ -62,7 +65,7 @@ class Counter:
                                     content = flow.request.content
                                     parts = content.split(bytes(boundary,'utf-8'))
                                     last = parts[len(parts)-2]
-                                    
+
                                     gzdat = last.split(bytes("\r\n",'utf-8'))[4]
 
                                     ctx.log.info("data: %s" % "rt.gz")
@@ -82,40 +85,76 @@ class Counter:
                                     #f = open("rt.csv", "wb")
                                     #f.write(undat)
                                     #f.close()
-                                    undat8 = undat.decode("utf-8")
-                                    lines = undat8.splitlines()
-                                    for bcline in lines:
-                                        # Dump each line
-                                        #line = bcline.decode("utf-8")
-                                        line = bcline
-                                        ctx.log.info("line: %s" % line)
-                                        cols = line.split(',')
-                                        numcols = len(cols)
-                                        #ctx.log.info("numcols: %d" % numcols)
-                                        #for col in cols:
-                                        #    ctx.log.info("app: %s" % cols[0])
-                                        app  = cols[0]
-                                        uk01 = cols[1]
-                                        uk02 = cols[2]
-                                        doc  = cols[3]
-                                        uk04 = cols[4]
-                                        stime = cols[5]
-                                        etime = cols[6]
-                                        uk07 = cols[7]
-                                        uk08 = cols[8]
-                                        uk09 = cols[9]
-                                        uk10 = cols[10]
-                                        uk11 = cols[11]
-                                        ctx.log.info("acct: %s" % acct)
-                                        ctx.log.info("app: %s" % app)
-                                        ctx.log.info("doc: %s" % doc)
-                                        ctx.log.info("time: %s" % stime + " to " + etime)
+
+                                    if "HDI_HOST" in os.environ:
+                                        hdi_host = os.environ['HDI_HOST']
+                                        ctx.log.info("HDI_HOST: %s" % hdi_host)
+
+                                        if "HDI_PORT" in os.environ:
+                                            hdi_port = os.environ['HDI_PORT']
+
+                                        if "HDI_SCHEMA" in os.environ:
+                                            hdi_schema = os.environ['HDI_SCHEMA']
+
+                                        if "HDI_USER" in os.environ:
+                                            hdi_user = os.environ['HDI_USER']
+
+                                        if "HDI_PASS" in os.environ:
+                                            hdi_pass = os.environ['HDI_PASS']
+
+                                        ctx.log.info("HDI_PORT: %s" % hdi_port)
+                                        ctx.log.info("HDI_SCHEMA: %s" % hdi_schema)
+                                        ctx.log.info("HDI_USER: %s" % hdi_user)
+                                        ctx.log.info("HDI_PASS: %s" % hdi_pass)
+
+                                        # https://pypi.org/project/hdbcli/
+                                        try:
+                                            conn = dbapi.connect(address=hdi_host,port=int(hdi_port),schema=hdi_schema,user=hdi_user,password=hdi_pass)
+                                            undat8 = undat.decode("utf-8")
+                                            lines = undat8.splitlines()
+                                            #data = io.StringIO(undat8)
+                                            reader = csv.reader(lines, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
+                                            for l in reader:
+                                                app   = l[0]
+                                                doc   = l[3]
+                                                stime = l[5]
+                                                etime = l[6]
+                                                ctx.log.info("===============")
+                                                ctx.log.info("acct: %s" % acct)
+                                                ctx.log.info("app: %s" % app)
+                                                ctx.log.info("doc: %s" % doc)
+                                                ctx.log.info("time: %s" % stime + " to " + etime)
+
+# CALL "collect_slice"(
+#	IN_ACCT => 'e1b9c14f251f9d594546f4a5387f4834'/*<NVARCHAR(32)>*/,
+#	IN_APP => 'rescuetime'/*<NVARCHAR(255)>*/,
+#	IN_DOC => 'RescueTime'/*<NVARCHAR(255)>*/,
+#	IN_VALIDFROM => '2019-07-12 16:13:22'/*<NVARCHAR(24)>*/,
+#	IN_VALIDTO => '2019-07-12 16:13:26'/*<NVARCHAR(24)>*/,
+#	EX_MESSAGE => ?
+#);
+
+                                            cursor = conn.cursor()
+                                            cursor.execute("SELECT NOW() FROM DUMMY")
+                                            for row in cursor:
+                                                ctx.log.info("server time: %s" % row)
+                                            cursor.close()
+                                        except:
+                                            ctx.log.info("Error connecting to HANA: %s" % "unknown")
+                                        #else:
+                                        #    ctx.log.info("HANA: %s" % "OK")
+                                        finally:
+                                            ctx.log.info("HANA: %s" % "Finshed")
+                                            conn.close()
+                                    else:
+                                        ctx.log.info("HDI ENV_VARS NOT SET!")
+
                                 else:
                                     dval = flow.request.multipart_form[key].decode("utf-8")
                                     ctx.log.info("key: %s" % dkey + " = " + dval)
                         else:
                             ctx.log.info("expected content type of multipart/form-data.")
-                    else: 
+                    else:
                         ctx.log.info("rt_post_type: %s" % "unknown")
                 else:
                     ctx.log.info("No Content-Type Exists!")
