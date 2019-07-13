@@ -114,6 +114,8 @@ class Counter:
                                             lines = undat8.splitlines()
                                             #data = io.StringIO(undat8)
                                             reader = csv.reader(lines, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
+                                            #cursor = conn.cursor()
+
                                             for l in reader:
                                                 app   = l[0]
                                                 doc   = l[3]
@@ -125,6 +127,8 @@ class Counter:
                                                 ctx.log.info("doc: %s" % doc)
                                                 ctx.log.info("time: %s" % stime + " to " + etime)
 
+                                            # https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.03/en-US/aaf3a0b8823946a2807f469b25f3dcaa.html
+                                            #cursor.callproc("collect_slice",)
 # CALL "collect_slice"(
 #	IN_ACCT => 'e1b9c14f251f9d594546f4a5387f4834'/*<NVARCHAR(32)>*/,
 #	IN_APP => 'rescuetime'/*<NVARCHAR(255)>*/,
@@ -133,6 +137,7 @@ class Counter:
 #	IN_VALIDTO => '2019-07-12 16:13:26'/*<NVARCHAR(24)>*/,
 #	EX_MESSAGE => ?
 #);
+                                            #cursor.close()
 
                                             cursor = conn.cursor()
                                             cursor.execute("SELECT NOW() FROM DUMMY")
