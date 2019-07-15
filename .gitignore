@@ -47,3 +47,6 @@ rtbad.gz
 rtgood.gz
 .config
 mitmproxy.tar
+.vim/
+.vimrc
+*.flow
