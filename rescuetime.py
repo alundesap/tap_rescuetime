@@ -102,19 +102,47 @@ class Counter:
                                         if "HDI_PASS" in os.environ:
                                             hdi_pass = os.environ['HDI_PASS']
 
+                                        if "HDI_CERT" in os.environ:
+                                            hdi_cert = os.environ['HDI_CERT']
+
                                         ctx.log.info("HDI_PORT: %s" % hdi_port)
                                         ctx.log.info("HDI_SCHEMA: %s" % hdi_schema)
                                         ctx.log.info("HDI_USER: %s" % hdi_user)
                                         ctx.log.info("HDI_PASS: %s" % hdi_pass)
+                                        if "HDI_CERT" in os.environ:
+                                            ctx.log.info("HDI_CERT: %s" % hdi_cert)
 
                                         # https://pypi.org/project/hdbcli/
                                         try:
-                                            conn = dbapi.connect(address=hdi_host,port=int(hdi_port),schema=hdi_schema,user=hdi_user,password=hdi_pass)
+                                            if "HDI_CERT" in os.environ:
+                                                conn = dbapi.connect(
+                                                    address=hdi_host,
+                                                    port=int(hdi_port),
+                                                    user=hdi_user,
+                                                    password=hdi_pass,
+                                                    currentSchema=hdi_schema,
+                                                    encrypt="true",
+                                                    sslValidateCertificate="true",
+                                                    sslCryptoProvider="openssl",
+                                                    sslTrustStore=hdi_cert
+                                                )
+
+                                            else:
+                                                conn = dbapi.connect(address=hdi_host,port=int(hdi_port),schema=hdi_schema,user=hdi_user,password=hdi_pass)
                                             undat8 = undat.decode("utf-8")
                                             lines = undat8.splitlines()
                                             #data = io.StringIO(undat8)
                                             reader = csv.reader(lines, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
-                                            #cursor = conn.cursor()
+
+                                            cursor = conn.cursor()
+
+                                            cursor.execute("SELECT NOW() FROM DUMMY")
+                                            for row in cursor:
+                                                ctx.log.info("server time1: %s" % row)
+
+
+                                            sql = 'insert into "' + hdi_schema + '"."RESCUETIME_SLICES" (ID, MODIFIEDAT, CREATEDAT, CREATEDBY, MODIFIEDBY, VALIDFROM, VALIDTO, ACCOUNT, APPLICATION, DOCUMENT) values(NEWUID(),NOW(),NOW(),'"'"'mitm'"'"','"'"'mitm'"'"',?,?,?,?,?)'
+                                            #ctx.log.info("sql: %s" % sql)
 
                                             for l in reader:
                                                 app   = l[0]
@@ -127,9 +155,23 @@ class Counter:
                                                 ctx.log.info("doc: %s" % doc)
                                                 ctx.log.info("time: %s" % stime + " to " + etime)
 
-                                            # https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.03/en-US/aaf3a0b8823946a2807f469b25f3dcaa.html
-                                            #cursor.callproc("collect_slice",)
-# CALL "collect_slice"(
+                                                # https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.04/en-US/f3b8fabf34324302b123297cdbe710f0.html
+
+#insert into "RESCUETIME_SLICES" values('','','','','','','','','','')
+
+                                                ctx.log.info("insert RESCUTIME_SLICES acct: %s" % acct)
+
+                                                #retval = false
+                                                retval = cursor.execute(sql,(stime,etime,acct,app,doc))
+                                                #ctx.log.info("insert SLICES: %s" % str(retval))
+
+                                                #outmsg = ''
+
+                                                #ctx.log.info("collect_slice acct: %s" % acct)
+                                                #cursor.callproc("collect_slice",(acct,app,doc,stime,etime,outmsg))
+                                                #ctx.log.info("collect_slice outmsg: %s" % outmsg)
+
+#CALL "collect_slice"(
 #	IN_ACCT => 'e1b9c14f251f9d594546f4a5387f4834'/*<NVARCHAR(32)>*/,
 #	IN_APP => 'rescuetime'/*<NVARCHAR(255)>*/,
 #	IN_DOC => 'RescueTime'/*<NVARCHAR(255)>*/,
@@ -137,12 +179,11 @@ class Counter:
 #	IN_VALIDTO => '2019-07-12 16:13:26'/*<NVARCHAR(24)>*/,
 #	EX_MESSAGE => ?
 #);
-                                            #cursor.close()
 
-                                            cursor = conn.cursor()
                                             cursor.execute("SELECT NOW() FROM DUMMY")
                                             for row in cursor:
-                                                ctx.log.info("server time: %s" % row)
+                                                ctx.log.info("server time2: %s" % row)
+
                                             cursor.close()
                                         except:
                                             ctx.log.info("Error connecting to HANA: %s" % "unknown")
@@ -177,7 +218,8 @@ class Counter:
             content = flow.response.content.decode("utf-8")
             #ctx.log.info("content: %s" % content)
             tweeked = content
-            tweeked = re.sub(r'.*push_interval: (.*)\n', r'  push_interval: 120\n', tweeked)
+            #tweeked = re.sub(r'.*push_interval: (.*)\n', r'  push_interval: 120\n', tweeked)
+            tweeked = re.sub(r'.*push_interval: (.*)\n', r'  push_interval: 60\n', tweeked)
             tweeked = re.sub(r'.*pull_interval: (.*)\n', r'  pull_interval: 30\n', tweeked)
             tweeked = re.sub(r'.*premium_enabled: (.*)\n', r'  premium_enabled: true\n', tweeked)
             tweeked = re.sub(r'.*timepie_enabled: (.*)\n', r'  timepie_enabled: true\n', tweeked)

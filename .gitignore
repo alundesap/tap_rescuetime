@@ -50,3 +50,4 @@ mitmproxy.tar
 .vim/
 .vimrc
 *.flow
+.wget-hsts
