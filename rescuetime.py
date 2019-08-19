@@ -8,7 +8,7 @@ import base64
 from hdbcli import dbapi
 import csv
 import os
-
+import datetime
 
 def dump(obj):
     for attr in dir(obj):
@@ -32,7 +32,7 @@ class Counter:
                     ctx.log.info("Content-Type Exists!")
                     cont_type = flow.request.headers["Content-Type"]
                     cont_len = flow.request.headers["Content-Length"]
-                    ctx.log.info("cont_type: %s" % cont_len + "=" + cont_type)
+                    #ctx.log.info("cont_type: %s" % cont_len + "=" + cont_type)
                     mp_type, mp_bound = cont_type.split(';')
                     if flow.request.url == "https://api.rescuetime.com/config":
                         ctx.log.info("rt_post_type: %s" % "config")
@@ -134,21 +134,46 @@ class Counter:
                                             #data = io.StringIO(undat8)
                                             reader = csv.reader(lines, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
 
+                                            for l in reader:
+                                                etime = l[6]
+                                                #ctx.log.info("type: %s" % type(etime))
+                                                #datetime_object = datetime.datetime.now()
+                                                #ctx.log.info("now: %s" % datetime_object)
+                                                #ctx.log.info("etime: %s" % etime)
+
+                                            dt = datetime.datetime.strptime(etime, "%Y-%m-%d %H:%M:%S")
+                                            now = datetime.datetime.now()
+                                            diff = now - dt
+                                            ctx.log.info("dt: %s" % dt)
+                                            ctx.log.info("now: %s" % now)
+                                            ctx.log.info("diff: %s" % diff)
+                                            hdiff = round(diff.seconds/3600)
+                                            ctx.log.info("hdiff: %s" % hdiff)
+
                                             cursor = conn.cursor()
 
                                             cursor.execute("SELECT NOW() FROM DUMMY")
                                             for row in cursor:
-                                                ctx.log.info("server time1: %s" % row)
+                                                #ctx.log.info("type: %s" % type(row))
+                                                ctx.log.info("server time: %s" % row)
 
 
                                             sql = 'insert into "' + hdi_schema + '"."RESCUETIME_SLICES" (ID, MODIFIEDAT, CREATEDAT, CREATEDBY, MODIFIEDBY, VALIDFROM, VALIDTO, ACCOUNT, APPLICATION, DOCUMENT) values(NEWUID(),NOW(),NOW(),'"'"'mitm'"'"','"'"'mitm'"'"',?,?,?,?,?)'
                                             #ctx.log.info("sql: %s" % sql)
 
+                                            reader = csv.reader(lines, quotechar='"', delimiter=',', quoting=csv.QUOTE_ALL, skipinitialspace=True)
+
                                             for l in reader:
                                                 app   = l[0]
                                                 doc   = l[3]
                                                 stime = l[5]
+                                                st = datetime.datetime.strptime(stime, "%Y-%m-%d %H:%M:%S")
+                                                st = st + datetime.timedelta(hours=hdiff)
+                                                stime = st.strftime("%Y-%m-%d %H:%M:%S")
                                                 etime = l[6]
+                                                et = datetime.datetime.strptime(etime, "%Y-%m-%d %H:%M:%S")
+                                                et = et + datetime.timedelta(hours=hdiff)
+                                                etime = et.strftime("%Y-%m-%d %H:%M:%S")
                                                 ctx.log.info("===============")
                                                 ctx.log.info("acct: %s" % acct)
                                                 ctx.log.info("app: %s" % app)
@@ -191,7 +216,10 @@ class Counter:
                                         #    ctx.log.info("HANA: %s" % "OK")
                                         finally:
                                             ctx.log.info("HANA: %s" % "Finshed")
-                                            conn.close()
+                                            if 'conn' in locals():
+                                                conn.close()
+                                            else:
+                                                ctx.log.info("HANA: %s" % "INVALID DB CONNECTION!  Reset ENV Vars!  It's likely a re-deploy changed your HDI container! ===============")
                                     else:
                                         ctx.log.info("HDI ENV_VARS NOT SET!")
 
