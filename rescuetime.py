@@ -22,22 +22,22 @@ class Counter:
 
     def request(self, flow):
         self.num = self.num + 1
-        ctx.log.info("We've seen %d flowz" % self.num)
-        ctx.log.info("url: %s" % flow.request.url)
+        #ctx.log.info("We've seen %d flowz" % self.num)
+        #ctx.log.info("url: %s" % flow.request.url)
         if "Host" in flow.request.headers:
-            ctx.log.info("host: %s" % flow.request.headers["Host"])
+            #ctx.log.info("host: %s" % flow.request.headers["Host"])
             if flow.request.headers["Host"] == "api.rescuetime.com":
-                ctx.log.info("RescueTime API!")
+                #ctx.log.info("RescueTime API!")
                 if "Content-Type" in flow.request.headers:
-                    ctx.log.info("Content-Type Exists!")
+                    #ctx.log.info("Content-Type Exists!")
                     cont_type = flow.request.headers["Content-Type"]
                     cont_len = flow.request.headers["Content-Length"]
                     #ctx.log.info("cont_type: %s" % cont_len + "=" + cont_type)
                     mp_type, mp_bound = cont_type.split(';')
                     if flow.request.url == "https://api.rescuetime.com/config":
                         ctx.log.info("rt_post_type: %s" % "config")
-                    elif flow.request.url == "https://api.rescuetime.com/messages":
-                        ctx.log.info("rt_post_type: %s" % "messages")
+                    #elif flow.request.url == "https://api.rescuetime.com/messages":
+                        #ctx.log.info("rt_post_type: %s" % "messages")
                     elif flow.request.url == "https://api.rescuetime.com/collect":
                         ctx.log.info("rt_post_type: %s" % "collect")
 # https://mitmproxy.readthedocs.io/en/v2.0.2/scripting/api.html#mitmproxy.http.HTTPRequest
@@ -165,19 +165,29 @@ class Counter:
 
                                             for l in reader:
                                                 app   = l[0]
+                                                myst  = l[1]
+                                                l2    = l[2]
                                                 doc   = l[3]
+                                                url   = l[4]
                                                 stime = l[5]
                                                 st = datetime.datetime.strptime(stime, "%Y-%m-%d %H:%M:%S")
                                                 st = st + datetime.timedelta(hours=hdiff)
                                                 stime = st.strftime("%Y-%m-%d %H:%M:%S")
                                                 etime = l[6]
+                                                offt  = l[7] #Offline Time = 5?
+                                                l8    = l[8]
+                                                l9    = l[9]
+                                                l0    = l[10]
                                                 et = datetime.datetime.strptime(etime, "%Y-%m-%d %H:%M:%S")
                                                 et = et + datetime.timedelta(hours=hdiff)
                                                 etime = et.strftime("%Y-%m-%d %H:%M:%S")
-                                                ctx.log.info("===============")
+                                                ctx.log.info("===============2:"+l2+"|8:"+l8+"|9:"+l9+"|10:"+l0)
                                                 ctx.log.info("acct: %s" % acct)
                                                 ctx.log.info("app: %s" % app)
                                                 ctx.log.info("doc: %s" % doc)
+                                                ctx.log.info("url: %s" % url)
+                                                ctx.log.info("myst: %s" % myst)
+                                                ctx.log.info("offt: %s" % offt)
                                                 ctx.log.info("time: %s" % stime + " to " + etime)
 
                                                 # https://help.sap.com/viewer/0eec0d68141541d1b07893a39944924e/2.0.04/en-US/f3b8fabf34324302b123297cdbe710f0.html
@@ -228,8 +238,8 @@ class Counter:
                                     ctx.log.info("key: %s" % dkey + " = " + dval)
                         else:
                             ctx.log.info("expected content type of multipart/form-data.")
-                    else:
-                        ctx.log.info("rt_post_type: %s" % "unknown")
+                    #else:
+                        #ctx.log.info("rt_post_type: %s" % "unknown")
                 else:
                     ctx.log.info("No Content-Type Exists!")
             else:
@@ -242,7 +252,7 @@ class Counter:
         self.num = self.num + 1
         flow.response.headers["count"] = str(self.num)
         if flow.request.url == "https://api.rescuetime.com/config":
-            ctx.log.info("rt_post_type: %s" % "config")
+            #ctx.log.info("rt_post_type: %s" % "config")
             content = flow.response.content.decode("utf-8")
             #ctx.log.info("content: %s" % content)
             tweeked = content
@@ -253,8 +263,8 @@ class Counter:
             tweeked = re.sub(r'.*timepie_enabled: (.*)\n', r'  timepie_enabled: true\n', tweeked)
             ctx.log.info("tweeked: %s" % tweeked)
             flow.response.text = tweeked
-        else: 
-            ctx.log.info("rt_post_type: %s" % "unknown")
+        #else: 
+            #ctx.log.info("rt_post_type: %s" % "unknown")
 
 
 addons = [
