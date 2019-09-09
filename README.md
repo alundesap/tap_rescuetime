@@ -4,9 +4,12 @@ MITM script for tapping rescuetime data
 # Run these as the ec2-user to pick up .mtimproxy/config.yaml
 mitmproxy -s ./rescuetime.py
 
+
 mitmproxy --proxyauth mitm:Nirvana8484 -s ./rescuetime.py
 
+
 mitmproxy -s ./rescuetime.py --proxyauth mitm:Nirvana8484
+
 
 export HDI_SCHEMA=CONCILE_V0
 export HDI_USER=CONCILE_V0_43G78DED9T79M9XAZDKDP22G2_RT
@@ -24,6 +27,8 @@ echo $HDI_CERT
 
 
 mitmdump -s ./rescuetime.py
+
+
 mitmproxy -s ./rescuetime.py
 
 
